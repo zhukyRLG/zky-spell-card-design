@@ -1,0 +1,32 @@
+#TouhouDanmakufu[Plural]
+#ScriptVersion[3]
+#Title["My First Boss Script"]
+#Text["code by zky"] 
+
+@Event{
+}
+
+@Initialize{
+    TPlural;
+}
+
+@MainLoop{
+    yield;
+}
+
+task TPlural{
+    let dir = GetCurrentScriptDirectory();
+    let objBoss = ObjEnemyBossScene_Create();
+    ObjEnemyBossScene_Add(objBoss, 0, dir ~ "./SC1.dmf");
+    ObjEnemyBossScene_Add(objBoss, 1, dir ~ "./SC2.dmf");
+    ObjEnemyBossScene_Add(objBoss, 2, dir ~ "./SC3.dmf");
+    ObjEnemyBossScene_Add(objBoss, 3, dir ~ "./SC4.dmf");
+    ObjEnemyBossScene_Add(objBoss, 4, dir ~ "./SC5.dnh");
+    ObjEnemyBossScene_Add(objBoss, 5, dir ~ "./SC6.dnh");
+    ObjEnemyBossScene_LoadInThread(objBoss);
+    ObjEnemyBossScene_Regist(objBoss);
+    while(!Obj_IsDeleted(objBoss)){
+        yield;
+    }
+    CloseScript(GetOwnScriptID());
+}

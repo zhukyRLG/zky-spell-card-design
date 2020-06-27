@@ -1,0 +1,137 @@
+#TouhouDanmakufu[Single]
+#ScriptVersion[3]
+#Title["SC3"]
+#Text["Code by zky. Knife with sin flower"]
+
+#include "script/default_system/Default_ShotConst.txt"
+
+let objBoss;
+let objScene=GetEnemyBossSceneObjectID();
+
+@Event{
+    alternative(GetEventType())
+    case(EV_REQUEST_LIFE){
+        SetScriptResult(2000);
+    }
+    case(EV_REQUEST_TIMER){
+        SetScriptResult(100);
+    }
+    case(EV_REQUEST_SPELL_SCORE){
+        SetScriptResult(100000000);
+    }
+}
+
+@Initialize{
+    objBoss = ObjEnemy_Create(OBJ_ENEMY_BOSS);
+    ObjEnemy_Regist(objBoss);
+    ObjMove_SetDestAtFrame(objBoss, GetCenterX, 60, 60);
+    let imgExRumia = GetCurrentScriptDirectory() ~ "ExRumia.png";
+    ObjPrim_SetTexture(objBoss, imgExRumia);
+    ObjSprite2D_SetSourceRect(objBoss, 64, 1, 127, 64);
+    ObjSprite2D_SetDestCenter(objBoss);
+    ObjEnemyBossScene_StartSpell(objScene);
+
+    TDrawLoop;
+    TFinalize;
+    MainTask;
+}
+
+@MainLoop{
+    ObjEnemy_SetIntersectionCircleToShot(objBoss, ObjMove_GetX(objBoss), ObjMove_GetY(objBoss), 32); 
+    ObjEnemy_SetIntersectionCircleToPlayer(objBoss, ObjMove_GetX(objBoss), ObjMove_GetY(objBoss), 24);
+    yield;
+}
+
+task MainTask{
+    wait(120);
+    movement;
+    fireA;
+}
+
+task movement{
+	let CX=GetCenterX;
+	let CY=GetCenterY-90;
+    while(ObjEnemy_GetInfo(objBoss, INFO_LIFE) > 0){
+		let angleT=rand(0,360);
+        ObjMove_SetDestAtFrame(objBoss, CX+sin(angleT)*30, CY+cos(angleT)*30, 60);
+        wait(120);
+    }
+}
+
+task fireA{
+    while(ObjEnemy_GetInfo(objBoss, INFO_LIFE) > 0){
+        let angleT =0;
+		loop (30){
+			let obj=CreateShotA1(ObjMove_GetX(objBoss),ObjMove_GetY(objBoss),4,angleT,DS_KNIFE_KOUMA_SKY,5);
+			Changedir2(obj,angleT);
+			angleT+=12;
+		}
+        wait(40);
+        angleT =360-rand(0,5);
+		loop (30){
+			let obj=CreateShotA1(ObjMove_GetX(objBoss),ObjMove_GetY(objBoss),4,angleT,DS_KNIFE_KOUMA_SKY,5);
+			Changedir1(obj,angleT);
+			angleT-=12;
+		}
+        wait(40);
+		angleT=rand(0,11);
+		loop (90){
+			CreateShotA2(ObjMove_GetX(objBoss),ObjMove_GetY(objBoss),1,angleT,(ABS(sin(angleT*4)))*0.1,3,DS_BALL_BS_RED,5);
+			angleT+=4;
+		}
+		wait(40);
+    }
+}
+function ABS(x){
+	if (x<0){
+		return -x;
+	}else{
+		return x;
+	}
+}
+task Changedir2(Cirobj,nowang){
+	wait(30);
+	while (!Obj_IsDeleted(Cirobj)){
+		ObjMove_SetAngle(Cirobj, nowang);
+		nowang=(nowang+359)%360;
+		yield;
+	}
+}
+task Changedir1(Cirobj,nowang){
+	wait(30);
+	while (!Obj_IsDeleted(Cirobj)){
+		ObjMove_SetAngle(Cirobj, nowang);
+		nowang=(nowang+1)%360;
+		yield;
+	}
+}
+task TDrawLoop {
+    let imgExRumia = GetCurrentScriptDirectory() ~ "ExRumia.png";
+    ObjPrim_SetTexture(objBoss, imgExRumia);
+    ObjSprite2D_SetSourceRect(objBoss, 64, 1, 127, 64);
+    ObjSprite2D_SetDestCenter(objBoss);
+}
+
+task TFinalize {
+    while(ObjEnemy_GetInfo(objBoss, INFO_LIFE) > 0){yield;}
+    if(ObjEnemyBossScene_GetInfo(objScene, INFO_PLAYER_SHOOTDOWN_COUNT)
+            +ObjEnemyBossScene_GetInfo(objScene, INFO_PLAYER_SPELL_COUNT) == 0){
+        AddScore(ObjEnemyBossScene_GetInfo(objScene, INFO_SPELL_SCORE));
+    }
+    Obj_Delete(objBoss);
+    DeleteShotAll(TYPE_ALL,TYPE_IMMEDIATE);
+    SetAutoDeleteObject(true);
+    CloseScript(GetOwnScriptID());
+    return;
+}
+
+function GetCenterX(){
+    return GetStgFrameWidth() / 2;
+}
+function GetCenterY(){
+    return GetStgFrameHeight() / 2;
+}
+
+function wait(n){
+    loop(n){yield;}
+}
